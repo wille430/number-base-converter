@@ -1,3 +1,4 @@
+import fractions
 import math
 
 alphabet = [chr(i) for i in range(ord('a'), ord('z')+1)]
@@ -14,8 +15,27 @@ def char_to_num(char):
     else:
         # TODO: catch when char is not a number
         return int(char)
+
+def ele_count_in_list(list, ele_to_find):
+    count = 0
+    for ele in list:
+        if ele == ele_to_find:
+            count += 1
+
+    return count
+
+def remove_all_in_list(list, ele_to_remove):
+    new_list = []
+    for ele in list:
+        if ele != ele_to_remove:
+            new_list += ele
+    return new_list
         
-def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions: list = []) -> list:
+def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions: list = [], is_negative = False) -> list:
+
+    if (remaining < 0):
+        remaining *= -1
+        is_negative = True
 
     # hittar den största exponenten som är mindre än resterande tal
     exponent = math.floor(math.log(remaining) / math.log(base_n))
@@ -37,16 +57,18 @@ def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions
     remaining -= factor * base_n**exponent
 
     if(remaining > 0):
-        return from_base_10_to_n(base_n, remaining, numbers, fractions)
+        return from_base_10_to_n(base_n, remaining, numbers, fractions, is_negative)
     else:
-        return ''.join(list(map(lambda x: str(x), numbers))) + '.' + ''.join(list(map(lambda x: str(x), fractions)))
+        return ('-' if is_negative else '') + ''.join(list(map(lambda x: str(x), numbers))) + ('.' if len(fractions) > 0 else '') + ''.join(list(map(lambda x: str(x), fractions)))
 
 def from_base_n_to_base_10(base_n, number) -> list:
     # skapa en lista med varje siffra i numret
 
     split_number = str(number).split('.')
-    
-    nums = [char_to_num(x) for x in split_number[0]]
+
+    # negativt tal om antal minustecken är udda (-- -> pos, --- -> neg)
+    first_factor = 1 if ele_count_in_list(split_number[0], '-') % 2 == 0 else -1
+    nums = [char_to_num(x) for x in remove_all_in_list(split_number[0], '-')]
     decimals = []
 
     if len(split_number) > 1:
@@ -65,7 +87,10 @@ def from_base_n_to_base_10(base_n, number) -> list:
 
         i += 1
 
-    return sum
+
+    print("In base 10:", first_factor * sum)
+
+    return first_factor * sum
 
 
 def main():
