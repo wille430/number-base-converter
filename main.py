@@ -15,41 +15,51 @@ def char_to_num(char):
         # TODO: catch when char is not a number
         return int(char)
         
+def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions: list = []) -> list:
 
-def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], last_exponent: int = None) -> list:
-
-    if ((last_exponent == 0 and last_exponent) or remaining == 0):
-        return ''.join(list(map(lambda x: '0' if x == None else str(x), numbers)))
-
-    # hittar den största exponenten
+    # hittar den största exponenten som är mindre än resterande tal
     exponent = math.floor(math.log(remaining) / math.log(base_n))
 
     # hittar den största faktorn framför exponenten
     factor = math.floor(remaining / base_n**exponent)
 
-    # Om numbers är tom tilldela den en lista med samma antal element som exponentens värde (index 0 kommer motsvara a**n, index 1: a**(n-1) osv)
-    if (len(numbers) == 0):
-        numbers = [None] * (exponent + 1)
-        
-    # lägger till faktorn i listan
-    numbers[len(numbers) - exponent - 1] = num_to_char(factor)
+    if (factor >= base_n):
+        raise BaseException(f"Number is not in base {base_n}")
+
+    # om exponenten är större än noll läggs faktorn till i listan med 
+    if (exponent >= 0):
+        # lägger till faktorn i listan
+        numbers += [num_to_char(factor)]
+    else:
+        fractions += [num_to_char(factor)]
 
     # beräknar resterande summa
     remaining -= factor * base_n**exponent
 
-    if(exponent > 0):
-        return from_base_10_to_n(base_n, remaining, numbers, exponent)
+    if(remaining > 0):
+        return from_base_10_to_n(base_n, remaining, numbers, fractions)
     else:
-        return ''.join(list(map(lambda x: '0' if x == None else str(x), numbers)))
+        return ''.join(list(map(lambda x: str(x), numbers))) + '.' + ''.join(list(map(lambda x: str(x), fractions)))
 
 def from_base_n_to_base_10(base_n, number) -> list:
     # skapa en lista med varje siffra i numret
-    nums = [char_to_num(x) for x in str(number)]
+
+    split_number = str(number).split('.')
+    
+    nums = [char_to_num(x) for x in split_number[0]]
+    decimals = []
+
+    if len(split_number) > 1:
+        decimals = [char_to_num(x) for x in split_number[1]]
 
     sum = 0
 
     i = 0
-    for num in nums:
+    for num in (nums + decimals):
+
+        if (num >= base_n):
+            raise BaseException(f"Number is not in base {base_n}")
+
         exponent = (len(nums) - 1)-i
         sum += num * base_n**exponent
 
