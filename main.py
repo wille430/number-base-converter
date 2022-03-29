@@ -1,4 +1,3 @@
-import fractions
 import math
 
 alphabet = [chr(i) for i in range(ord('a'), ord('z')+1)]
@@ -31,7 +30,7 @@ def remove_all_in_list(list, ele_to_remove):
             new_list += ele
     return new_list
         
-def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions: list = [], is_negative = False) -> list:
+def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions: list = [], is_negative = False, last_exponent: int or None = None) -> list:
 
     if (remaining < 0):
         remaining *= -1
@@ -43,13 +42,23 @@ def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions
     # hittar den största faktorn framför exponenten
     factor = math.floor(remaining / base_n**exponent)
 
+    print(factor)
+
     if (factor >= base_n):
         raise BaseException(f"Number is not in base {base_n}")
 
-    # om exponenten är större än noll läggs faktorn till i listan med 
+    # om exponenten är större än noll läggs faktorn till i listan med talen vänster om decimal tecknet
     if (exponent >= 0):
         # lägger till faktorn i listan
+
+        # TODO: add zeros when difference between current and last exponent is larger than 1
+        if last_exponent:
+            while last_exponent >= exponent:
+                numbers += [0]
+                last_exponent -= 1
+
         numbers += [num_to_char(factor)]
+        print(factor, num_to_char(factor))
     else:
         fractions += [num_to_char(factor)]
 
@@ -57,7 +66,7 @@ def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions
     remaining -= factor * base_n**exponent
 
     if(remaining > 0):
-        return from_base_10_to_n(base_n, remaining, numbers, fractions, is_negative)
+        return from_base_10_to_n(base_n, remaining, numbers, fractions, is_negative, last_exponent)
     else:
         return ('-' if is_negative else '') + ''.join(list(map(lambda x: str(x), numbers))) + ('.' if len(fractions) > 0 else '') + ''.join(list(map(lambda x: str(x), fractions)))
 
