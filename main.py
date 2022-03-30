@@ -1,13 +1,16 @@
 import math
+import warnings
 
 alphabet = [chr(i) for i in range(ord('a'), ord('z')+1)]
 
+# returnerar en bokstav eller siffra, där a motsvarar 10 och b 11 osv.
 def num_to_char(num):
     if (num <= 9):
         return num
     else:
         return alphabet[num-10]
 
+# samma som num_to_char men tvärtom
 def char_to_num(char):
     if (alphabet.count(char)):
         return alphabet.index(char) + 10
@@ -15,103 +18,100 @@ def char_to_num(char):
         # TODO: catch when char is not a number
         return int(char)
 
-def ele_count_in_list(list, ele_to_find):
-    count = 0
-    for ele in list:
-        if ele == ele_to_find:
-            count += 1
+def join_array(array: list):
+    return ''.join(list(map(lambda x: str(x), array)))
 
-    return count
+def base_n_to_10(base_n: int, number: float):
 
-def remove_all_in_list(list, ele_to_remove):
-    new_list = []
-    for ele in list:
-        if ele != ele_to_remove:
-            new_list += ele
-    return new_list
+    split_number = str(number).split('.')
+
+    # siffrorna före decimalen
+    int_part = split_number[0]
+    # siffrorna efter
+    frac_part = ""
+
+    if (len(split_number) > 1):
+        frac_part = split_number[1]
+
+    is_neg_factor = 1
+    if (int_part.count('-') % 2 != 0):
+        is_neg_factor = -1
         
-def from_base_10_to_n(base_n: int, remaining: int, numbers: list = [], fractions: list = [], is_negative = False, last_exponent: int or None = None) -> list:
+        # ta bort '-'
+        int_part = int_part.replace('-', '', -1)
 
+
+    sum = 0
+    i = len(int_part)-1
+
+    # adderar ex 2*2^3
+    for num in (int_part+frac_part):
+        print(num)
+        sum += char_to_num(num)*(base_n**i)
+        i -= 1
+
+    return is_neg_factor * sum
+
+def base_10_to_m(base_m: int, remaining: int, int_part = [], frac_part = [], is_negative = False, last_exponent: None or int = None):
+
+    # kollar om talet är negativt
     if (remaining < 0):
         remaining *= -1
         is_negative = True
 
-    # hittar den största exponenten som är mindre än resterande tal
-    exponent = math.floor(math.log(remaining) / math.log(base_n))
+    exponent = last_exponent
 
-    # hittar den största faktorn framför exponenten
-    factor = math.floor(remaining / base_n**exponent)
+    # om det är första iterationen:
+    if last_exponent is None:
+        if remaining > 0:
+            exponent = math.floor(math.log(remaining) / math.log(base_m))
+        else:
+            exponent = 0
+    else:
+        exponent -= 1
 
-    print(factor)
+    # htitar största möjliga faktor till termen
+    factor = math.floor(remaining / (base_m ** exponent))
 
-    if (factor >= base_n):
-        raise BaseException(f"Number is not in base {base_n}")
+    # ett tal i bas m kan inte a en siffra som är större eller lika med m
+    if (factor >= base_m):
+        warnings.warn(f"Found a number which is greater than the base. Input number might not be in base {base_m}.")
 
-    # om exponenten är större än noll läggs faktorn till i listan med talen vänster om decimal tecknet
+    # om exponenten >= 0 är siffran en del av siffrorna framför decimaltecknet
     if (exponent >= 0):
-        # lägger till faktorn i listan
-
-        # TODO: add zeros when difference between current and last exponent is larger than 1
-        if last_exponent:
-            while last_exponent >= exponent:
-                numbers += [0]
-                last_exponent -= 1
-
-        numbers += [num_to_char(factor)]
-        print(factor, num_to_char(factor))
+        int_part += [num_to_char(factor)]
     else:
-        fractions += [num_to_char(factor)]
+        frac_part += [num_to_char(factor)]
 
-    # beräknar resterande summa
-    remaining -= factor * base_n**exponent
+    # resterande summa
+    remaining -= factor * (base_m ** exponent)
 
-    if(remaining > 0):
-        return from_base_10_to_n(base_n, remaining, numbers, fractions, is_negative, last_exponent)
+    print(factor, base_m, exponent)
+
+    if (remaining > 0 or exponent > 0):
+        return base_10_to_m(base_m, remaining, int_part, frac_part, is_negative, exponent)
     else:
-        return ('-' if is_negative else '') + ''.join(list(map(lambda x: str(x), numbers))) + ('.' if len(fractions) > 0 else '') + ''.join(list(map(lambda x: str(x), fractions)))
+        array_to_join = []
 
-def from_base_n_to_base_10(base_n, number) -> list:
-    # skapa en lista med varje siffra i numret
+        if is_negative:
+            array_to_join += ['-']
+        
+        array_to_join += int_part
 
-    split_number = str(number).split('.')
+        if len(frac_part):
+            array_to_join += ['.']+frac_part
 
-    # negativt tal om antal minustecken är udda (-- -> pos, --- -> neg)
-    first_factor = 1 if ele_count_in_list(split_number[0], '-') % 2 == 0 else -1
-    nums = [char_to_num(x) for x in remove_all_in_list(split_number[0], '-')]
-    decimals = []
-
-    if len(split_number) > 1:
-        decimals = [char_to_num(x) for x in split_number[1]]
-
-    sum = 0
-
-    i = 0
-    for num in (nums + decimals):
-
-        if (num >= base_n):
-            raise BaseException(f"Number is not in base {base_n}")
-
-        exponent = (len(nums) - 1)-i
-        sum += num * base_n**exponent
-
-        i += 1
-
-
-    print("In base 10:", first_factor * sum)
-
-    return first_factor * sum
-
-
+        return join_array(array_to_join)
+    
 def main():
-    base_a = int(input('From base:'))
-    number = input('Number to convert:')
-    base_b = int(input('To base:'))
+    input_number = input("Enter a number:") # kommer vara string
+    base_n = int(input("from base:"))
+    base_m = int(input("to base:"))
 
-    num_base_10 = from_base_n_to_base_10(base_a, number)
-    num_base_b = from_base_10_to_n(base_b, num_base_10) if base_b != 10 else num_base_10
+    num_base_10 = base_n_to_10(base_n, input_number)
+    num_base_m = base_10_to_m(base_m, num_base_10)
 
-    print("Result: ", num_base_b)
+    print("Result number:", num_base_m)
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
